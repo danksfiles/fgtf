@@ -43,17 +43,21 @@ class SentimentAnalyzer:
                 logger.warning("Could not retrieve historical bars for volatility score.")
                 return 50.0 # Return neutral score
 
-            # Calculate 30-day rolling volatility
-            bars['log_return'] = np.log(bars['close'] / bars['close'].shift(1))
-            bars['volatility'] = bars['log_return'].rolling(window=30).std() * np.sqrt(252)
+            # Calculate 30-day rolling volatility using a more robust method
+            log_returns = np.log(bars['close'] / bars['close'].shift(1))
+            bars['volatility'] = log_returns.rolling(window=30).std() * np.sqrt(252)
             
             current_volatility = bars['volatility'].iloc[-1]
-            historical_volatility = bars['volatility'].dropna()
             
-            # Normalize the score (0-100)
+            # Higher volatility should correlate with more fear (lower score)
+            # We can normalize this against the 90-day history
+            historical_volatility = bars['volatility'].dropna()
             percentile = historical_volatility.rank(pct=True).iloc[-1]
-            score = (1 - percentile) * 100 # Higher percentile (more volatile) -> lower score
-            logger.info(f"Volatility score for {symbol}: {score:.2f}")
+            
+            # Invert the percentile: high volatility (high percentile) should result in a low score
+            score = (1 - percentile) * 100
+            
+            logger.info(f"Volatility score for {symbol}: {score:.2f} (current vol: {current_volatility:.3f})")
             return score
         except Exception as e:
             logger.error(f"Error calculating volatility score: {e}", exc_info=True)
