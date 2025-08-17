@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: docker.io/library/fear-greed-trading-framework_postgres:latest
+    build: ./containers/postgres
+    container_name: postgres_trading_framework
+    environment:
+      POSTGRES_DB: trading_framework
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: docker.io/library/redis:7
+    container_name: redis_trading_framework
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
